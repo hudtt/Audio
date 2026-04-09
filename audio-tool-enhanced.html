@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معالج الصوت المتقدم</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            margin-bottom: 25px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .file-input-wrapper:hover {
+            background: #eef0ff;
+            border-color: #764ba2;
+        }
+
+        .file-input-wrapper input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 35px;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .file-name {
+            background: #f0f4ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 600;
+            word-break: break-all;
+            display: none;
+        }
+
+        .waveform {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(180deg, #f5f5f5 0%, #fff 100%);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #e0e0e0;
+        }
+
+        .waveform.show {
+            display: block;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label label {
+            color: #333;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .control-value {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 12px;
+            background: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+        }
+
+        .presets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            padding: 10px;
+            background: #f0f4ff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f4ff;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e8ecff;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .visualizer {
+            width: 100%;
+            height: 60px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            border: 1px solid #e0e0e0;
+        }
+
+        .visualizer.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 معالج الصوت المتقدم</h1>
+            <p>رفع ومعالجة الملفات الصوتية باحترافية</p>
+        </div>
+
+        <div class="upload-section">
+            <label for="fileInput" class="file-input-wrapper">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">اضغط لاختيار ملف صوتي</div>
+                <div class="upload-subtext">MP3, WAV, OGG</div>
+                <input type="file" id="fileInput" accept="audio/*">
+            </label>
+            <div class="file-name" id="fileName"></div>
+        </div>
+
+        <div class="waveform" id="waveform">
+            <canvas id="waveformCanvas"></canvas>
+        </div>
+
+        <div class="visualizer" id="visualizer">
+            <canvas id="visualizerCanvas"></canvas>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="basic">أساسي</button>
+            <button class="tab" data-tab="equalizer">معادل</button>
+            <button class="tab" data-tab="effects">مؤثرات</button>
+        </div>
+
+        <div id="basicTab" class="tab-content active">
+            <div class="presets">
+                <button class="preset-btn" onclick="applyPreset('normal')">عادي</button>
+                <button class="preset-btn" onclick="applyPreset('voice')">صوت</button>
+                <button class="preset-btn" onclick="applyPreset('music')">موسيقى</button>
+                <button class="preset-btn" onclick="applyPreset('bass')">باص</button>
+            </div>
+
+            <div class="controls-grid">
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>عزل الضوضاء</label>
+                        <span class="control-value" id="noiseValue">0%</span>
+                    </div>
+                    <input type="range" id="noiseSlider" min="0" max="100" value="0">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>الصدى</label>
+                        <span class="control-value" id="reverbValue">0%</span>
+                    </div>
+                    <input type="range" id="reverbSlider" min="0" max="100" value="0">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>الصوت</label>
+                        <span class="control-value" id="volumeValue">100%</span>
+                    </div>
+                    <input type="range" id="volumeSlider" min="0" max="200" value="100">
+                </div>
+            </div>
+        </div>
+
+        <div id="equalizerTab" class="tab-content">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>Bass (منخفض)</label>
+                        <span class="control-value" id="bassValue">0 dB</span>
+                    </div>
+                    <input type="range" id="bassSlider" min="-12" max="12" value="0" step="0.5">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>Mid (متوسط)</label>
+                        <span class="control-value" id="midValue">0 dB</span>
+                    </div>
+                    <input type="range" id="midSlider" min="-12" max="12" value="0" step="0.5">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>Treble (عالي)</label>
+                        <span class="control-value" id="trebleValue">0 dB</span>
+                    </div>
+                    <input type="range" id="trebleSlider" min="-12" max="12" value="0" step="0.5">
+                </div>
+            </div>
+        </div>
+
+        <div id="effectsTab" class="tab-content">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>Pitch (طبقة الصوت)</label>
+                        <span class="control-value" id="pitchValue">0</span>
+                    </div>
+                    <input type="range" id="pitchSlider" min="-12" max="12" value="0" step="1">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>السرعة</label>
+                        <span class="control-value" id="speedValue">1.0x</span>
+                    </div>
+                    <input type="range" id="speedSlider" min="0.5" max="2" value="1" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>تشويه</label>
+                        <span class="control-value" id="distortionValue">0%</span>
+                    </div>
+                    <input type="range" id="distortionSlider" min="0" max="100" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn-primary" id="playBtn" disabled>▶ تشغيل</button>
+            <button class="btn-secondary" id="stopBtn" disabled>⏹ إيقاف</button>
+            <button class="btn-primary" id="downloadBtn" disabled>⬇ تحميل</button>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        let audioBuffer = null;
+        let isPlaying = false;
+        let currentSource = null;
+
+        // Audio nodes
+        let filter, convolver, dryGain, wetGain, masterGain;
+        let bassEQ, midEQ, trebleEQ;
+        let pitchShift, distortion;
+
+        // Elements
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const waveformDiv = document.getElementById('waveform');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const visualizerDiv = document.getElementById('visualizer');
+        const visualizerCanvas = document.getElementById('visualizerCanvas');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusDiv = document.getElementById('status');
+
+        // Sliders
+        const noiseSlider = document.getElementById('noiseSlider');
+        const reverbSlider = document.getElementById('reverbSlider');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const bassSlider = document.getElementById('bassSlider');
+        const midSlider = document.getElementById('midSlider');
+        const trebleSlider = document.getElementById('trebleSlider');
+        const pitchSlider = document.getElementById('pitchSlider');
+        const speedSlider = document.getElementById('speedSlider');
+        const distortionSlider = document.getElementById('distortionSlider');
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
+
+        // Initialize audio nodes
+        async function initAudio() {
+            await Tone.start();
+            const audioContext = Tone.getContext().rawContext;
+
+            filter = audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 50;
+            filter.Q.value = 1;
+
+            convolver = audioContext.createConvolver();
+            dryGain = audioContext.createGain();
+            wetGain = audioContext.createGain();
+            masterGain = audioContext.createGain();
+
+            bassEQ = audioContext.createBiquadFilter();
+            bassEQ.type = 'lowshelf';
+            bassEQ.frequency.value = 200;
+
+            midEQ = audioContext.createBiquadFilter();
+            midEQ.type = 'peaking';
+            midEQ.frequency.value = 1000;
+            midEQ.Q.value = 1;
+
+            trebleEQ = audioContext.createBiquadFilter();
+            trebleEQ.type = 'highshelf';
+            trebleEQ.frequency.value = 3000;
+
+            distortion = audioContext.createWaveShaper();
+
+            // Connect nodes
+            filter.connect(bassEQ);
+            bassEQ.connect(midEQ);
+            midEQ.connect(trebleEQ);
+            trebleEQ.connect(dryGain);
+            trebleEQ.connect(wetGain);
+            dryGain.connect(distortion);
+            wetGain.connect(convolver);
+            convolver.connect(distortion);
+            distortion.connect(masterGain);
+            masterGain.connect(audioContext.destination);
+
+            createImpulseResponse();
+            createDistortionCurve(0);
+        }
+
+        initAudio();
+
+        // File upload
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileName.textContent = '📄 ' + file.name;
+            fileName.style.display = 'block';
+            showStatus('⏳ جاري التحميل...', 'loading');
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const audioContext = Tone.getContext().rawContext;
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                waveformDiv.classList.add('show');
+                visualizerDiv.classList.add('show');
+                drawWaveform();
+
+                playBtn.disabled = false;
+                downloadBtn.disabled = false;
+                showStatus('✅ تم التحميل بنجاح!', 'success');
+            } catch (error) {
+                showStatus('❌ خطأ في التحميل: ' + error.message, 'error');
+            }
+        });
+
+        function createImpulseResponse() {
+            const audioContext = Tone.getContext().rawContext;
+            const rate = audioContext.sampleRate;
+            const length = rate * 2;
+            const impulse = audioContext.createBuffer(2, length, rate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+
+            for (let i = 0; i < length; i++) {
+                left[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+                right[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+            }
+            convolver.buffer = impulse;
+        }
+
+        function createDistortionCurve(amount) {
+            const samples = 44100;
+            const curve = new Float32Array(samples);
+            const deg = Math.PI / 180;
+            const k = amount * 100;
+
+            for (let i = 0; i < samples; i++) {
+                const x = (i * 2) / samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            distortion.curve = curve;
+        }
+
+        function updateProcessing() {
+            const noiseAmount = noiseSlider.value / 100;
+            const reverbAmount = reverbSlider.value / 100;
+            const volumeAmount = volumeSlider.value / 100;
+
+            filter.frequency.value = 50 + (noiseAmount * 7950);
+            dryGain.gain.value = 1 - (reverbAmount * 0.7);
+            wetGain.gain.value = reverbAmount * 2;
+            masterGain.gain.value = volumeAmount;
+
+            bassEQ.gain.value = parseFloat(bassSlider.value);
+            midEQ.gain.value = parseFloat(midSlider.value);
+            trebleEQ.gain.value = parseFloat(trebleSlider.value);
+
+            createDistortionCurve(distortionSlider.value / 100);
+
+            // Update displays
+            document.getElementById('noiseValue').textContent = noiseSlider.value + '%';
+            document.getElementById('reverbValue').textContent = reverbSlider.value + '%';
+            document.getElementById('volumeValue').textContent = volumeSlider.value + '%';
+            document.getElementById('bassValue').textContent = bassSlider.value + ' dB';
+            document.getElementById('midValue').textContent = midSlider.value + ' dB';
+            document.getElementById('trebleValue').textContent = trebleSlider.value + ' dB';
+            document.getElementById('pitchValue').textContent = pitchSlider.value;
+            document.getElementById('speedValue').textContent = speedSlider.value + 'x';
+            document.getElementById('distortionValue').textContent = distortionSlider.value + '%';
+        }
+
+        [noiseSlider, reverbSlider, volumeSlider, bassSlider, midSlider, trebleSlider, pitchSlider, speedSlider, distortionSlider].forEach(slider => {
+            slider.addEventListener('input', updateProcessing);
+        });
+
+        playBtn.addEventListener('click', async () => {
+            if (isPlaying || !audioBuffer) return;
+
+            try {
+                const audioContext = Tone.getContext().rawContext;
+                currentSource = audioContext.createBufferSource();
+                currentSource.buffer = audioBuffer;
+                currentSource.playbackRate.value = parseFloat(speedSlider.value);
+                currentSource.detune.value = pitchSlider.value * 100;
+                currentSource.connect(filter);
+
+                currentSource.start(0);
+                isPlaying = true;
+                playBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                startVisualizer();
+
+                currentSource.onended = () => {
+                    isPlaying = false;
+                    playBtn.disabled = false;
+                    stopBtn.disabled = true;
+                };
+            } catch (error) {
+                showStatus('❌ خطأ في التشغيل: ' + error.message, 'error');
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (currentSource) {
+                currentSource.stop();
+                currentSource = null;
+            }
+            isPlaying = false;
+            playBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!audioBuffer) return;
+            showStatus('⏳ جاري معالجة الملف...', 'loading');
+
+            try {
+                const audioContext = Tone.getContext().rawContext;
+                const offlineCtx = new OfflineAudioContext(
+                    audioBuffer.numberOfChannels,
+                    audioBuffer.length * parseFloat(speedSlider.value),
+                    audioBuffer.sampleRate
+                );
+
+                // Create offline nodes
+                const offlineFilter = offlineCtx.createBiquadFilter();
+                offlineFilter.type = 'highpass';
+                offlineFilter.frequency.value = 50 + (noiseSlider.value / 100 * 7950);
+
+                const offlineConvolver = offlineCtx.createConvolver();
+                const offlineDryGain = offlineCtx.createGain();
+                const offlineWetGain = offlineCtx.createGain();
+                const offlineMasterGain = offlineCtx.createGain();
+
+                const offlineBassEQ = offlineCtx.createBiquadFilter();
+                offlineBassEQ.type = 'lowshelf';
+                offlineBassEQ.frequency.value = 200;
+                offlineBassEQ.gain.value = parseFloat(bassSlider.value);
+
+                const offlineMidEQ = offlineCtx.createBiquadFilter();
+                offlineMidEQ.type = 'peaking';
+                offlineMidEQ.frequency.value = 1000;
+                offlineMidEQ.Q.value = 1;
+                offlineMidEQ.gain.value = parseFloat(midSlider.value);
+
+                const offlineTrebleEQ = offlineCtx.createBiquadFilter();
+                offlineTrebleEQ.type = 'highshelf';
+                offlineTrebleEQ.frequency.value = 3000;
+                offlineTrebleEQ.gain.value = parseFloat(trebleSlider.value);
+
+                const offlineDistortion = offlineCtx.createWaveShaper();
+                const samples = 44100;
+                const curve = new Float32Array(samples);
+                const k = (distortionSlider.value / 100) * 100;
+                for (let i = 0; i < samples; i++) {
+                    const x = (i * 2) / samples - 1;
+                    curve[i] = ((3 + k) * x * 20 * Math.PI / 180) / (Math.PI + k * Math.abs(x));
+                }
+                offlineDistortion.curve = curve;
+
+                // Impulse
+                const rate = offlineCtx.sampleRate;
+                const length = rate * 2;
+                const impulse = offlineCtx.createBuffer(2, length, rate);
+                const left = impulse.getChannelData(0);
+                const right = impulse.getChannelData(1);
+                for (let i = 0; i < length; i++) {
+                    left[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+                    right[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+                }
+                offlineConvolver.buffer = impulse;
+
+                // Connect
+                offlineFilter.connect(offlineBassEQ);
+                offlineBassEQ.connect(offlineMidEQ);
+                offlineMidEQ.connect(offlineTrebleEQ);
+                offlineTrebleEQ.connect(offlineDryGain);
+                offlineTrebleEQ.connect(offlineWetGain);
+                offlineDryGain.connect(offlineDistortion);
+                offlineWetGain.connect(offlineConvolver);
+                offlineConvolver.connect(offlineDistortion);
+                offlineDistortion.connect(offlineMasterGain);
+                offlineMasterGain.connect(offlineCtx.destination);
+
+                const reverbAmount = reverbSlider.value / 100;
+                offlineDryGain.gain.value = 1 - (reverbAmount * 0.7);
+                offlineWetGain.gain.value = reverbAmount * 2;
+                offlineMasterGain.gain.value = volumeSlider.value / 100;
+
+                const source = offlineCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.playbackRate.value = parseFloat(speedSlider.value);
+                source.detune.value = pitchSlider.value * 100;
+                source.connect(offlineFilter);
+                source.start(0);
+
+                const rendered = await offlineCtx.startRendering();
+                downloadWAV(rendered);
+                showStatus('✅ تم التحميل بنجاح!', 'success');
+            } catch (error) {
+                showStatus('❌ خطأ: ' + error.message, 'error');
+            }
+        });
+
+        function downloadWAV(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const bitDepth = 16;
+
+            let interleaved;
+            if (numChannels === 2) {
+                const left = buffer.getChannelData(0);
+                const right = buffer.getChannelData(1);
+                interleaved = new Float32Array(left.length * 2);
+                for (let i = 0; i < left.length; i++) {
+                    interleaved[i * 2] = left[i];
+                    interleaved[i * 2 + 1] = right[i];
+                }
+            } else {
+                interleaved = buffer.getChannelData(0);
+            }
+
+            const dataLength = interleaved.length * numChannels * bitDepth / 8;
+            const bufferLength = 44 + dataLength;
+            const arrayBuffer = new ArrayBuffer(bufferLength);
+            const view = new DataView(arrayBuffer);
+
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * bitDepth / 8, true);
+            view.setUint16(32, numChannels * bitDepth / 8, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataLength, true);
+
+            let index = 44;
+            for (let i = 0; i < interleaved.length; i++) {
+                view.setInt16(index, interleaved[i] < 0 ? interleaved[i] * 0x8000 : interleaved[i] * 0x7FFF, true);
+                index += 2;
+            }
+
+            const blob = new Blob([arrayBuffer], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'audio-enhanced.wav';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function drawWaveform() {
+            const canvas = waveformCanvas;
+            canvas.width = waveformDiv.offsetWidth;
+            canvas.height = 100;
+
+            const ctx = canvas.getContext('2d');
+            const data = audioBuffer.getChannelData(0);
+            const step = Math.ceil(data.length / canvas.width);
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+
+            ctx.fillStyle = gradient;
+            for (let i = 0; i < canvas.width; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const datum = data[i * step + j];
+                    if (datum < min) min = datum;
+                    if (datum > max) max = datum;
+                }
+                const y = (1 + min) * canvas.height / 4;
+                const height = Math.max(1, (max - min) * canvas.height / 2);
+                ctx.fillRect(i, y, 1, height);
+            }
+        }
+
+        function startVisualizer() {
+            const audioContext = Tone.getContext().rawContext;
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            masterGain.connect(analyser);
+
+            const canvas = visualizerCanvas;
+            canvas.width = visualizerDiv.offsetWidth;
+            canvas.height = 60;
+            const ctx = canvas.getContext('2d');
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                if (!isPlaying) return;
+
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.fillStyle = '#f5f5f5';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height;
+                    const hue = (i / bufferLength) * 60 + 250;
+                    ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            }
+            draw();
+        }
+
+        function applyPreset(preset) {
+            switch(preset) {
+                case 'normal':
+                    noiseSlider.value = 0;
+                    reverbSlider.value = 0;
+                    volumeSlider.value = 100;
+                    bassSlider.value = 0;
+                    midSlider.value = 0;
+                    trebleSlider.value = 0;
+                    break;
+                case 'voice':
+                    noiseSlider.value = 30;
+                    reverbSlider.value = 10;
+                    bassSlider.value = -3;
+                    midSlider.value = 4;
+                    trebleSlider.value = 2;
+                    break;
+                case 'music':
+                    noiseSlider.value = 10;
+                    reverbSlider.value = 25;
+                    bassSlider.value = 3;
+                    midSlider.value = 0;
+                    trebleSlider.value = 3;
+                    break;
+                case 'bass':
+                    bassSlider.value = 8;
+                    midSlider.value = -2;
+                    trebleSlider.value = -4;
+                    break;
+            }
+            updateProcessing();
+        }
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status show ' + type;
+            if (type === 'success') {
+                setTimeout(() => statusDiv.classList.remove('show'), 3000);
+            }
+        }
+    </script>
+</body>
+</html>
